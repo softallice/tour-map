@@ -44,8 +44,9 @@ const getSvgPattern = (( features , svg ) => {
             .append("image")
             .attr('id', 'img' + features[i].properties.SIG_ENG_NM)
             .attr("xlink:href", "/sample.jpg")
-            .attr("width", "200")
-            .attr("height", "200") ;
+            .attr("preserveAspectRatio", "xMidYMid slice")
+            .attr("width", "100")
+            .attr("height", "100") ;
     }
 
     return svg;
