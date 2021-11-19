@@ -198,8 +198,9 @@ export default {
       // Highlight hovered province
       // console.log(d.properties.SIG_ENG_NM);
       // if (d.properties.SIG_ENG_NM === 'Wonju-si') {
-      let id = '#' + d.properties.SIG_ENG_NM ;
-      console.log(d3.select(id));
+      let id = '#img' + d.properties.SIG_ENG_NM ;
+      // console.log(d3.select(id)[0]);
+      document.querySelector(id).setAttribute('href', 'https://cdn.pixabay.com/photo/2020/02/14/15/35/dog-4848668_960_720.jpg');
           
       d3.select(this).style('fill', `url('#Wonju-si')`);
 

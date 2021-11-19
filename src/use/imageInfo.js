@@ -41,10 +41,11 @@ const getSvgPattern = (( features , svg ) => {
             .attr('y','0')
             .attr('width', '1')
             .attr('height', '1')
-            // .append("image")
-            // .attr("xlink:href", "/sample.jpg")
-            // .attr("width", "200")
-            // .attr("height", "200") ;
+            .append("image")
+            .attr('id', 'img' + features[i].properties.SIG_ENG_NM)
+            .attr("xlink:href", "/sample.jpg")
+            .attr("width", "200")
+            .attr("height", "200") ;
     }
 
     return svg;
