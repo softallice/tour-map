@@ -10,14 +10,34 @@
     </div>
     <svg></svg>
   </div>
-  <div>
+  <!-- <div>
     <q-img
       ref="myImg"
-      src="~assets/sample.jpg"
+      :src="rawImg"
+      spinner-color="white"
+      style="height: 140px; max-width: 150px"
+    />
+  </div> -->
+  <div>
+    <UploadImages refs="uploadImage" @changed="handleImages" :max='10' />
+  </div>
+  <!-- <div>
+    <q-file
+      v-model="image"
+      label="Pick one file"
+      filled
+      style="max-width: 300px"
+      @change="updateFile"
+    />
+  </div>
+  <div>
+    <q-img
+      :src="imageUrl"
       spinner-color="white"
       style="height: 140px; max-width: 150px"
     />
   </div>
+   <q-btn color="white" text-color="black" label="Standard"  @click="updateFile"/> -->
 </template>
 
 <script>
@@ -26,14 +46,68 @@ import * as d3 from 'd3';
 import koreaMap from 'src/use/korea-sgg.json'
 import imageInfo from 'src/use/imageInfo';
 
+import UploadImages from 'src/components/UploadDropImages.vue'
+
 export default {
   name: 'PageIndex', 
+  components: {
+      UploadImages,
+  },
   setup () {
     let province = ref(null);
     let currentProvince = ref(null);
 
     let myImg = ref(null);
     let location = ref(null)
+
+    // 이미지 
+    const uploadImage = ref(null);
+    const image = ref(null);
+    const imageUrl = ref('');
+
+    let bgImg = [];
+
+    let rawImg = ref(null);
+
+    const updateFile = (() => {
+      // console.log('image.value ', image.value);
+      console.log(createBase64Image(image.value));
+      imageUrl.value = URL.createObjectURL(image.value);
+      // console.log('이미지', imageUrl.value);
+    })
+
+    const handleImages = ((files) => {
+      let arrFile = [...files];
+
+      console.log(arrFile)
+
+      arrFile.map(async ( arr ) => {
+        createBase64Image(arr);
+        // let imgGps = await imageInfo.getImageGps(arr);
+        // console.log('imgGps ', imgGps);
+
+        // let loc = imageInfo.getImageLoc(imgGps.latitute, imgGps.longitude);
+
+        // loc.image = arr;
+
+        // bgImg.push(loc)
+
+        // console.log('bgImg', bgImg);
+      })
+    })
+
+    const createBase64Image = ((fileObject) => {
+      let reader = new FileReader();
+      reader.onload = async (e) => {
+        rawImg.value = e.target.result;
+        // imageInfo.setImage(fileObject.name, rawImg.value);
+        let imageUrl = await imageInfo.setDbImage(fileObject.name, rawImg.value);
+      };
+
+      reader.readAsDataURL(fileObject);
+      // reader.readAsBinaryString(fileObject);
+    })
+    // 
 
     const selectProvince = (( province ) => {
       // console.log(province);
@@ -87,7 +161,7 @@ export default {
 
     onMounted( async () => {
       
-      console.log(await imageInfo.getImageGps('/sample.jpg'));
+      // console.log(await imageInfo.getImageGps('/sample.jpg'));
 
       svg = d3.select('svg')
         .attr('width', size.width)
@@ -154,6 +228,7 @@ export default {
             .attr('d', path)
             .attr('vector-effect', 'non-scaling-stroke')
             .style('fill', fillFn)
+            // .style('fill', 'none')
             .on('mouseover', mouseover)
             .on('mouseout', mouseout)
             .on('click', clicked);
@@ -198,11 +273,21 @@ export default {
       // Highlight hovered province
       // console.log(d.properties.SIG_ENG_NM);
       // if (d.properties.SIG_ENG_NM === 'Wonju-si') {
-      let id = '#img' + d.properties.SIG_ENG_NM ;
+      let sigEngNm = d.properties.SIG_ENG_NM;
+      
+      let id = '#img' + sigEngNm.replace(', ', '-') ;
       // console.log(d3.select(id)[0]);
-      document.querySelector(id).setAttribute('href', 'https://cdn.pixabay.com/photo/2020/02/14/15/35/dog-4848668_960_720.jpg');
+      bgImg.map((arr) => {
+        document.querySelector(id).setAttribute('href', arr.image);
+        let fillId = `url('#` + arr.properties.SIG_ENG_NM + `')`;
+        // d3.select(this).style('fill', `url('#Wonju-si')`);
+        console.log(arr);
+        d3.select(this).style('fill', fillId );
+      })
+      
+      // document.querySelector(id).setAttribute('href', 'https://cdn.pixabay.com/photo/2020/02/14/15/35/dog-4848668_960_720.jpg');
           
-      d3.select(this).style('fill', `url('#Wonju-si')`);
+      
 
       if(d) {
         selectProvince(d.properties);
@@ -256,7 +341,13 @@ export default {
     return {
       province,
       currentProvince,
-      myImg
+      myImg,
+      image,
+      imageUrl,
+      updateFile,
+      handleImages,
+      uploadImage,
+      rawImg
     }
   }
 

@@ -11,12 +11,16 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
+    "axios": "^0.24.0",
     "core-js": "^3.6.5",
     "d3": "3.5.17",
     "exif-js": "^2.3.0",
     "exifreader": "^4.0.0",
+    "form-data": "^4.0.0",
+    "localbase": "^0.7.5",
     "point-in-polygon": "^1.1.0",
-    "quasar": "^2.0.0"
+    "quasar": "^2.0.0",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.13.14",
