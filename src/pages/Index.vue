@@ -65,13 +65,15 @@ export default {
     const image = ref(null);
     const imageUrl = ref('');
 
+    let serverImageUrl = '' ;
+
     let bgImg = [];
 
     let rawImg = ref(null);
 
     const updateFile = (() => {
       // console.log('image.value ', image.value);
-      console.log(createBase64Image(image.value));
+      // console.log(createBase64Image(image.value));
       imageUrl.value = URL.createObjectURL(image.value);
       // console.log('이미지', imageUrl.value);
     })
@@ -83,16 +85,20 @@ export default {
 
       arrFile.map(async ( arr ) => {
         createBase64Image(arr);
-        // let imgGps = await imageInfo.getImageGps(arr);
-        // console.log('imgGps ', imgGps);
+        let imgGps = await imageInfo.getImageGps(arr);
+        console.log('imgGps ', imgGps);
 
-        // let loc = imageInfo.getImageLoc(imgGps.latitute, imgGps.longitude);
+        let loc = imageInfo.getImageLoc(imgGps.latitute, imgGps.longitude);
 
-        // loc.image = arr;
+        loc.image = arr;
+        // loc.url = serverImageUrl.id;
+        // console.log(serverImageUrl.id);
 
-        // bgImg.push(loc)
+        bgImg.push(loc)
 
-        // console.log('bgImg', bgImg);
+        console.log('bgImg', bgImg);
+
+        // serverImageUrl ='';
       })
     })
 
@@ -101,7 +107,8 @@ export default {
       reader.onload = async (e) => {
         rawImg.value = e.target.result;
         // imageInfo.setImage(fileObject.name, rawImg.value);
-        let imageUrl = await imageInfo.setDbImage(fileObject.name, rawImg.value);
+        serverImageUrl = await imageInfo.setDbImage(fileObject.name, rawImg.value);
+        
       };
 
       reader.readAsDataURL(fileObject);
@@ -169,20 +176,8 @@ export default {
 
       svg.append('defs');
 
-      // console.log('koreaMap ', koreaMap.features);
-
+      // 이미지 패턴 
       svg = imageInfo.getSvgPattern(koreaMap.features, svg);
-
-      // svg.append('pattern')
-      //   .attr('id', 'imgpattern')
-      //   .attr('x','0')
-      //   .attr('y','0')
-      //   .attr('width', '1')
-      //   .attr('height', '1')
-      //   .append("image")
-      //   .attr("xlink:href", "https://unsplash.it/300/300")
-      //   .attr("width", "400")
-      //   .attr("height", "400");
 
       // Add background
       svg.append('rect')
@@ -202,7 +197,7 @@ export default {
 
       var imgs = svg.selectAll("pattern").data([0]);
 
-      console.log('imgs : ', imgs);
+      // console.log('imgs : ', imgs);
 
 
 
@@ -227,8 +222,8 @@ export default {
             .append('path') 
             .attr('d', path)
             .attr('vector-effect', 'non-scaling-stroke')
-            .style('fill', fillFn)
-            // .style('fill', 'none')
+            // .style('fill', fillFn)
+            .style('fill', 'none')
             .on('mouseover', mouseover)
             .on('mouseout', mouseout)
             .on('click', clicked);

@@ -120,7 +120,7 @@
       </svg>
 
       <p class="mainMessage">
-        {{ uploadMsg ? uploadMsg : "Click to upload or drop your images here" }}
+        {{ uploadMsg ? uploadMsg : "여기에 이미지를 올려 주세요" }}
       </p>
     </div>
     <div class="imgsPreview" v-show="Imgs.length > 0">
@@ -261,7 +261,7 @@ export default {
       uploadInput.value = null;
       Imgs.value = [];
       files.value = [];
-    context.emit("changed", files.value);
+      context.emit("changed", files.value);
     })
 
     

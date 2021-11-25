@@ -58,9 +58,18 @@ const getImageLoc = (( lat, lon )=>{
 });
 
 // svg 이미지 패턴
-const getSvgPattern = (( features , svg ) => {
+const getSvgPattern = ( ( features , svg , imgArry ) => {
+
     for(let i = 0; i < features.length; i++) {        
         let sigEngNm = features[i].properties.SIG_ENG_NM;
+
+        let imageUrl = imgArry.filter(image => image.info.properties.SIG_ENG_NM === sigEngNm)[0]
+
+        if(typeof imageUrl == "undefined" || imageUrl == null || imageUrl == "") {
+            imageUrl = ""; ///sample.jpg
+        } else {
+            imageUrl = "http://172.27.42.125:3030/blobs/" + imageUrl.url;
+        }
 
         svg.append('pattern')
             .attr('id', sigEngNm.replace(', ', '-'))
@@ -70,7 +79,8 @@ const getSvgPattern = (( features , svg ) => {
             .attr('height', '1')
             .append("image")
             .attr('id', 'img' + sigEngNm.replace(', ', '-'))
-            .attr("xlink:href", "/sample.jpg")
+            .attr("xlink:href", imageUrl)
+            // .attr("xlink:href", "/sample.jpg")
             .attr("preserveAspectRatio", "xMidYMid slice")
             .attr("width", "100")
             .attr("height", "100") ;
@@ -79,14 +89,15 @@ const getSvgPattern = (( features , svg ) => {
     return svg;
 });
 
-const setDbImage = ( async ( name , image ) => {
+const setDbImage = ( async ( file , image, info ) => {
     // var FormData = require('form-data');
+    // console.log('loc', loc);
     var data = new FormData();
     data.append('uri', image);
 
     var config = {
         method: 'post',
-        url: 'http://localhost:3030/uploads',
+        url: 'http://172.27.42.125:3030/uploads',
         headers: { 
             'Content-Type': "multipart/form-data"
         },
@@ -97,26 +108,29 @@ const setDbImage = ( async ( name , image ) => {
 
     try {
         res = await axios(config) ;
-
-        await setDbImageUrl(name, res.data.id);
+        
+        await setDbImageUrl(file.name, res.data.id, info);
 
     } catch (e) {
-        console.log("image upload post fail")
+        console.log(e)
     }
 
     return res.data;
 })
 
-const setDbImageUrl = ( async (name, url ) => {
+const setDbImageUrl = ( async (name, url , info) => {
+
+    console.log('info', info)
     
     let data = {
         name : name,
-        url : url
+        url : url,
+        info : info
     };
 
     var config = {
         method: 'post',
-        url: 'http://localhost:3030/image-map',
+        url: 'http://172.27.42.125:3030/image-map',
         headers: { 
           'Content-Type': 'application/json'
         },
@@ -128,6 +142,23 @@ const setDbImageUrl = ( async (name, url ) => {
         console.log("image url post fail")
     }
 
+})
+
+const getDbImage = ( async () => {
+    var data = '';
+
+    var config = {
+    method: 'get',
+    url: 'http://172.27.42.125:3030/image-map',
+    headers: { },
+    data : data
+    };
+
+    let response = await axios(config);
+
+    // console.log('response', response);
+
+    return response.data.data
 })
 
 
@@ -182,7 +213,8 @@ const imageInfo = {
     setImage,
     getImage,
     getImageAll,
-    setDbImage
+    setDbImage,
+    getDbImage
 };
 
 export default imageInfo;
