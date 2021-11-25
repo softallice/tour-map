@@ -6,7 +6,15 @@
       <ul>
         <li>지역: {{currentProvince.SIG_KOR_NM}}</li>
         <li>영문: {{currentProvince.SIG_ENG_NM}}</li>
+        <!-- <li>영문: {{currentProvince.url}}</li> -->
       </ul>
+        <q-card class="my-card" flat>
+            <q-img :src="currentProvince.url">
+                <!-- <div class="absolute-bottom text-h6">
+                Title
+                </div> -->
+            </q-img>
+        </q-card>
     </div>
     <svg></svg>
   </div>
@@ -127,6 +135,11 @@ export default {
         })
 
         const openInfo = (( province ) => {
+            // console.log('province', province);            
+            let sigEngNm = province.SIG_ENG_NM;
+            let id = '#img' + sigEngNm.replace(', ', '-') ;
+            let inImgUrl = document.querySelector(id).getAttribute('href');
+            province.url = inImgUrl;
             currentProvince.value = province
         })
 
@@ -251,30 +264,12 @@ export default {
 
         function mouseover(d){
             // Highlight hovered province
-            // console.log(d.properties.SIG_ENG_NM);
-            // if (d.properties.SIG_ENG_NM === 'Wonju-si') {
             let sigEngNm = d.properties.SIG_ENG_NM;
             let id = '#img' + sigEngNm.replace(', ', '-') ;
 
-            // document.querySelector(id).setAttribute('href', 'https://cdn.pixabay.com/photo/2020/02/14/15/35/dog-4848668_960_720.jpg');
-            // document.querySelector(id).setAttribute('href', 'http://localhost:3030/blobs/7adbe0d4ebf1cc9e07e14aca92b8da91218cfaaf7904746a33548f475700c226.jpeg');
             let fillId = `url('#` + sigEngNm.replace(', ', '-') + `')`;
-            // console.log('fillId', fillId);
             d3.select(this).style('fill', fillId);
-            // d3.select(this).style('fill', `url('#Wonju-si')`);
-
-            // console.log(d3.select(id)[0]);
-            // bgImg.map((arr) => {
-            //     document.querySelector(id).setAttribute('href', arr.image);
-            //     let fillId = `url('#` + arr.properties.SIG_ENG_NM + `')`;
-            //     console.log(arr);
-            //     d3.select(this).style('fill', fillId );
-            // })
             
-            // document.querySelector(id).setAttribute('href', 'https://cdn.pixabay.com/photo/2020/02/14/15/35/dog-4848668_960_720.jpg');
-                
-            
-
             if(d) {
                 selectProvince(d.properties);
             }
@@ -355,7 +350,7 @@ export default {
     color: white;
   }
   .province-info {
-    background: #FACCCA;
+    background: white;
     position: absolute;
     border-radius: 7px;
     top: 150px;
@@ -373,6 +368,10 @@ export default {
     // fill : url('#imgpattern');
     stroke: #021019;
     stroke-width: 1px;
+  }
+  .my-card {
+    width: 100%;
+    max-width: 290px;
   }
 }
 </style>

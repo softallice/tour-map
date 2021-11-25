@@ -1,353 +1,363 @@
 <template>
   <div class="map-wrapper">
     <h2 v-if="province" class="province-title">{{province.state}}</h2>
-    <div v-if="currentProvince" class="province-info">
+    <div v-if="currentProvince" class="province-info" >
       <h3 class="text-center">{{currentProvince.state}}</h3>
       <ul>
         <li>지역: {{currentProvince.SIG_KOR_NM}}</li>
         <li>영문: {{currentProvince.SIG_ENG_NM}}</li>
+        <!-- <li>영문: {{currentProvince.url}}</li> -->
       </ul>
+        <q-card class="my-card" flat>
+            <q-img :src="currentProvince.url">
+                <!-- <div class="absolute-bottom text-h6">
+                Title
+                </div> -->
+            </q-img>
+        </q-card>
     </div>
     <svg></svg>
   </div>
-  <!-- <div>
-    <q-img
-      ref="myImg"
-      :src="rawImg"
-      spinner-color="white"
-      style="height: 140px; max-width: 150px"
-    />
-  </div> -->
   <div>
     <UploadImages refs="uploadImage" @changed="handleImages" :max='10' />
   </div>
-  <!-- <div>
-    <q-file
-      v-model="image"
-      label="Pick one file"
-      filled
-      style="max-width: 300px"
-      @change="updateFile"
-    />
-  </div>
-  <div>
-    <q-img
-      :src="imageUrl"
-      spinner-color="white"
-      style="height: 140px; max-width: 150px"
-    />
-  </div>
-   <q-btn color="white" text-color="black" label="Standard"  @click="updateFile"/> -->
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
 import * as d3 from 'd3';
 import koreaMap from 'src/use/korea-sgg.json'
-import imageInfo from 'src/use/imageInfo';
+import imageInfo from 'src/use/imgLocalInfo';
+// drag and drop 이미지 업로드
+import UploadImages from 'src/components/UploadDropImages.vue';
 
-import UploadImages from 'src/components/UploadDropImages.vue'
+import { useQuasar } from 'quasar';
 
 export default {
-  name: 'PageIndex', 
-  components: {
-      UploadImages,
-  },
-  setup () {
-    let province = ref(null);
-    let currentProvince = ref(null);
+    name: 'ImageMap', 
+    components: {
+        UploadImages,
+    },
 
-    let myImg = ref(null);
-    let location = ref(null)
+    setup () {
+        const $q = useQuasar();
 
-    // 이미지 
-    const uploadImage = ref(null);
-    const image = ref(null);
-    const imageUrl = ref('');
+        const screenWidthSize = (() => {
+            let _size = $q.screen.width;
 
-    let serverImageUrl = '' ;
+            return _size;
+        })
+        const screenHeightSize = (() => {
+            let _size = $q.screen.height - 100;
 
-    let bgImg = [];
+            return _size;
+        })
 
-    let rawImg = ref(null);
+        let province = ref(null);
+        let currentProvince = ref(null);
 
-    const updateFile = (() => {
-      // console.log('image.value ', image.value);
-      // console.log(createBase64Image(image.value));
-      imageUrl.value = URL.createObjectURL(image.value);
-      // console.log('이미지', imageUrl.value);
-    })
+        // 이미지 
+        const uploadImage = ref(null);
+        const image = ref(null);
+        const imageUrl = ref('');
 
-    const handleImages = ((files) => {
-      let arrFile = [...files];
+        let labels;
 
-      console.log(arrFile)
+        let bgImg = [];
 
-      arrFile.map(async ( arr ) => {
-        createBase64Image(arr);
-        let imgGps = await imageInfo.getImageGps(arr);
-        console.log('imgGps ', imgGps);
+        let rawImg = ref(null);
 
-        let loc = imageInfo.getImageLoc(imgGps.latitute, imgGps.longitude);
+        // map 초기값
+        let centered = null;
+        let mapCenter = {
+            lat: 35.8,
+            lng: 127.689999
+        };
+        let size = {
+            height: screenHeightSize(),
+            width: screenWidthSize()//d3.select('.map-wrapper').node().getBoundingClientRect().width,  
+        };
 
-        loc.image = arr;
-        // loc.url = serverImageUrl.id;
-        // console.log(serverImageUrl.id);
+        let initialScale = 6500;
 
-        bgImg.push(loc)
-
-        console.log('bgImg', bgImg);
-
-        // serverImageUrl ='';
-      })
-    })
-
-    const createBase64Image = ((fileObject) => {
-      let reader = new FileReader();
-      reader.onload = async (e) => {
-        rawImg.value = e.target.result;
-        // imageInfo.setImage(fileObject.name, rawImg.value);
-        serverImageUrl = await imageInfo.setDbImage(fileObject.name, rawImg.value);
-        
-      };
-
-      reader.readAsDataURL(fileObject);
-      // reader.readAsBinaryString(fileObject);
-    })
-    // 
-
-    const selectProvince = (( province ) => {
-      // console.log(province);
-      // if (province === 'undefined') {
-        
-      //   province.value = null;
-      // }
-      province.value = province;
-    })
-
-    const openInfo = (( province ) => {
-      currentProvince.value = province
-    })
-
-    const closeInfo = (() => {
-      currentProvince.value =  '';
-    })
-
-    let centered = null;
-    let mapCenter = {
-      lat: 37,
-      lng: 126
-    };
-    let size = {
-      height: 700,
-      width: 1200//d3.select('.map-wrapper').node().getBoundingClientRect().width,  
-    };
-
-    let initialScale = 6500;
+        let color = d3.scale.linear()
+        .domain([1, 20])
+        .clamp(true)
+        .range(['#08304b', '#08304b']);
     
-      
+        let projection = d3.geo.equirectangular()
+        .scale(initialScale)
+        .center([mapCenter.lng, mapCenter.lat])
+        .translate([size.width / 2, size.height / 2]);
 
-    let color = d3.scale.linear()
-    .domain([1, 20])
-    .clamp(true)
-    .range(['#08304b', '#08304b']);
-  
-    let projection = d3.geo.equirectangular()
-      .scale(initialScale)
-      .center([mapCenter.lng, mapCenter.lat])
-      .translate([size.width / 2, size.height / 2]);
+        let path = d3.geo.path()
+        .projection(projection);
 
-    let path = d3.geo.path()
-      .projection(projection);
+        // map svg 
+        let svg;
+        let g;
+        let effectLayer;
+        let mapLayer;
 
-
-    let svg;
-    let g;
-    let effectLayer;
-    let mapLayer;
-
-    onMounted( async () => {
-      
-      // console.log(await imageInfo.getImageGps('/sample.jpg'));
-
-      svg = d3.select('svg')
-        .attr('width', size.width)
-        .attr('height', size.height);
-
-      svg.append('defs');
-
-      // 이미지 패턴 
-      svg = imageInfo.getSvgPattern(koreaMap.features, svg);
-
-      // Add background
-      svg.append('rect')
-        .attr('class', 'background')
-        .attr('width', size.width)
-        .attr('height', size.height)
-        .on('click', clicked);
         
-      g = svg.append('g');
-  
-      effectLayer = g.append('g')
-        .classed('effect-layer', true);
-      mapLayer = g.append('g')
-        .classed('map-layer', true);
+
+        const handleImages = ((files) => {
+            let arrFile = [...files];
+
+            console.log(arrFile)
+
+            arrFile.map(async ( arr ) => {
+                createBase64Image(arr);
+            })
+        })
+
+        const createBase64Image = (async (fileObject) => {
+            // 이미지 GPS 정보 확인
+            
+            let imgGps = await imageInfo.getImageGps(fileObject);
+
+            console.log('imgGps ', imgGps);
+            // GPS 정보로 사진 위치 확인
+            let loc = imageInfo.getImageLoc(imgGps.latitute, imgGps.longitude);
 
 
+            let info = {
+                latitute : imgGps.latitute,
+                longitude : imgGps.longitude,
+                properties : loc.properties
+            };
+            
+            loc.image = fileObject;
+            
 
-      var imgs = svg.selectAll("pattern").data([0]);
 
-      // console.log('imgs : ', imgs);
+            
+            // 이미지 base64
+            let reader = new FileReader();
+            reader.onload = async (e) => {
+                rawImg.value = e.target.result;
+                // imageInfo.setImage(fileObject.name, rawImg.value);
+                // 서버에 이미지 저장
+                 await imageInfo.setImage(fileObject, rawImg.value, info);
+                // loc.url = remoteUrl.id;
+                bgImg.push(loc)                
+            };
 
+            reader.readAsDataURL(fileObject);
+            // reader.readAsBinaryString(fileObject);
+        })
 
+        const selectProvince = (( province ) => {
+            province.value = province;
+        })
 
-      // Load map data
-      let geoJsonUrl = 'js/korea-sgg.json';
-      // let geoJsonUrl = 'https://raw.githubusercontent.com/superpikar/indonesia-geojson/master/indonesia.geojson';
-      d3.json(geoJsonUrl, function(error, mapData) {
+        const openInfo = (( province ) => {
+            // console.log('province', province);            
+            let sigEngNm = province.SIG_ENG_NM;
+            let id = '#img' + sigEngNm.replace(', ', '-') ;
+            let inImgUrl = document.querySelector(id).getAttribute('href');
+            province.url = inImgUrl;
+            currentProvince.value = province
+        })
 
-        var features = mapData.features;
-        // console.log('features', features[0].geometry.coordinates[0]);
+        const closeInfo = (() => {
+            currentProvince.value =  '';
+        })
+
+        onMounted(()=> {
+            rendor();
+        })
+
+        const rendor = ( async () => {
+      
+            svg = d3.select('svg')
+                .attr('width', size.width)
+                .attr('height', size.height);
+
+            svg.append('defs');
+
+            let imageArray = await imageInfo.getImageAll();
+            console.log('imageArray', imageArray)
+      
+            svg = imageInfo.getSvgPattern(koreaMap.features, svg, imageArray);
+
+      
+            // Add background
+            svg.append('rect')
+                .attr('class', 'background')
+                .attr('width', size.width)
+                .attr('height', size.height)
+                .on('click', clicked);
+                
+            g = svg.append('g');
         
-        let location = imageInfo.getImageLocation( features, 37.4046341 , 127.8842384);
-        // console.log(location);
+            effectLayer = g.append('g')
+                .classed('effect-layer', true);
+            mapLayer = g.append('g')
+                .classed('map-layer', true);
 
-        // Update color scale domain based on data
-        color.domain([0, d3.max(features, nameLength)]);
 
-        // Draw each province as a path
-        mapLayer.selectAll('path')
-            .data(features)
-            .enter()
-            .append('path') 
-            .attr('d', path)
-            .attr('vector-effect', 'non-scaling-stroke')
-            // .style('fill', fillFn)
-            .style('fill', 'none')
-            .on('mouseover', mouseover)
-            .on('mouseout', mouseout)
-            .on('click', clicked);
 
-      });
-    });
+            var imgs = svg.selectAll("pattern").data([0]);
 
+      
+            // Load map data
+            let geoJsonUrl = 'js/korea-sgg.json';
+            // let geoJsonUrl = 'https://raw.githubusercontent.com/superpikar/indonesia-geojson/master/indonesia.geojson';
+            d3.json(geoJsonUrl, function(error, mapData) {
+
+                var features = mapData.features;
+
+                // Update color scale domain based on data
+                color.domain([0, d3.max(features, nameLength)]);
+
+                // Draw each province as a path
+                mapLayer
+                    .selectAll('path')
+                    .data(features)
+                    .enter()
+                    .append('path') 
+                    .attr('d', path)
+                    .attr('vector-effect', 'non-scaling-stroke')
+                    .style('fill', fillFn)
+                    // .style('fill', 'none')
+                    .on('mouseover', mouseover)
+                    .on('mouseout', mouseout)
+                    .on('click', clicked);
+
+                // labels = mapLayer
+                //     .selectAll('text')
+                //     .data(features)
+                //     .enter()
+                //     .append('text')
+                //     .attr('class', 'text')
+                //     .attr('transform', translateTolabel)
+                //     .attr('id', function(d) {
+                //         return 'label-' + d.properties.SIG_ENG_NM;
+                //     })
+                //     .attr('text-anchor', 'middle')
+                //     // .attr('dy', '.15em')
+                //     .attr('font-size', '10px')
+                //     .attr('font-size-adjust', '0.58')
+                //     .text(function(d) {
+                //         return d.properties.SIG_KOR_NM;
+                //     });
+
+            });
+        });
+
+        function clicked(d) {
+            var x, y, k;
+
+            // Compute centroid of the selected path
+            if (d && centered !== d) {
+                var centroid = path.centroid(d);
+                x = centroid[0];
+                y = centroid[1];
+                k = 4;
+                centered = d;
+                openInfo(d.properties);
+            } else {
+                x = size.width / 2;
+                y = size.height / 2;
+                k = 1;
+                centered = null;
+                closeInfo();
+            }
+
+            // Highlight the clicked province
+            mapLayer.selectAll('path')
+                .style('fill', function(d){
+                return centered && d===centered ? fillFn(d) : fillFn(d);
+                // return centered && d===centered ? '#D5708B' : fillFn(d);
+            });
+
+            // Zoom
+            g.transition()
+                .duration(750)
+                .attr('transform', 'translate(' + size.width / 2 + ',' + size.height / 2 + ')scale(' + k + ')translate(' + -x + ',' + -y + ')');
+        }
     
 
-    function clicked(d) {
-      var x, y, k;
+        function mouseover(d){
+            // Highlight hovered province
+            let sigEngNm = d.properties.SIG_ENG_NM;
+            let id = '#img' + sigEngNm.replace(', ', '-') ;
 
-      // Compute centroid of the selected path
-      if (d && centered !== d) {
-        var centroid = path.centroid(d);
-        x = centroid[0];
-        y = centroid[1];
-        k = 4;
-        centered = d;
-        openInfo(d.properties);
-      } else {
-        x = size.width / 2;
-        y = size.height / 2;
-        k = 1;
-        centered = null;
-        closeInfo();
-      }
+            let fillId = `url('#` + sigEngNm.replace(', ', '-') + `')`;
+            d3.select(this).style('fill', fillId);
+            
+            if(d) {
+                selectProvince(d.properties);
+            }
+            
+        }
 
-      // Highlight the clicked province
-      mapLayer.selectAll('path')
-        .style('fill', function(d){
-          return centered && d===centered ? '#D5708B' : fillFn(d);
-      });
+        function mouseout(d){
+            // console.log('d : ', d);
+            // selectProvince();
+            // province.value =null;
+            // // Reset province color
+            // mapLayer.selectAll('path')
+            //   .style('fill', (d) => {
+            //     return centered && d===centered ? '#D5708B' : fillFn(d);
+            //   });
+        }
 
-      // Zoom
-      g.transition()
-        .duration(750)
-        .attr('transform', 'translate(' + size.width / 2 + ',' + size.height / 2 + ')scale(' + k + ')translate(' + -x + ',' + -y + ')');
+        // Get province name length
+        function nameLength(d){
+            const n = nameFn(d);
+            return n ? n.length : 0;
+        }
+
+        // Get province name
+        function nameFn(d){
+            return d && d.properties ? d.properties.name : null;
+        }
+
+        // Get province color
+        function fillFn(d){
+            // 이미지 조회 및 배경 매핑
+            let sigEngNm = d.properties.SIG_ENG_NM;
+            let fillId = `url('#` + sigEngNm.replace(', ', '-') + `')`;
+            
+            // return color(nameLength(d));
+            return fillId;
+        }
+
+        // 텍스트 위치 조절 - 하드코딩으로 위치 조절을 했습니다.
+        const translateTolabel = ((d) => {
+            var arr = path.centroid(d);
+            if (d.properties.code == 31) {
+                //서울 경기도 이름 겹쳐서 경기도 내리기
+                arr[1] +=
+                    d3.event && d3.event.transform
+                        ? d3.event.transform / height + 20
+                        : initialScale / height + 20;
+            } else if (d.properties.code == 34) {
+                //충남은 조금 더 내리기
+                arr[1] +=
+                    d3.event && d3.event.transform
+                        ? d3.event.transform / height + 10
+                        : initialScale / height + 10;
+            }
+            return 'translate(' + arr + ')';
+        })
+
+        
+        return {
+            province,
+            currentProvince,
+            image,
+            imageUrl,
+            handleImages,
+            uploadImage,
+            rawImg,
+        }
     }
-
-    function mouseover(d){
-      // Highlight hovered province
-      // console.log(d.properties.SIG_ENG_NM);
-      // if (d.properties.SIG_ENG_NM === 'Wonju-si') {
-      let sigEngNm = d.properties.SIG_ENG_NM;
-      
-      let id = '#img' + sigEngNm.replace(', ', '-') ;
-      // console.log(d3.select(id)[0]);
-      bgImg.map((arr) => {
-        document.querySelector(id).setAttribute('href', arr.image);
-        let fillId = `url('#` + arr.properties.SIG_ENG_NM + `')`;
-        // d3.select(this).style('fill', `url('#Wonju-si')`);
-        console.log(arr);
-        d3.select(this).style('fill', fillId );
-      })
-      
-      // document.querySelector(id).setAttribute('href', 'https://cdn.pixabay.com/photo/2020/02/14/15/35/dog-4848668_960_720.jpg');
-          
-      
-
-      if(d) {
-        selectProvince(d.properties);
-      }
-      
-
-    //  d3.select(this)
-    //      .append("svg:image")
-    //      .attr("xlink:href", "/sample.jpg")
-    //      .attr("cx", 700)
-    //      .attr("cy", 300)
-    //      .attr("height", 10)
-    //      .attr("width", 10);
-
-    //   if(d) {
-    //     selectProvince(d.properties);
-    //   }
-
-
-      
-    }
-
-    function mouseout(d){
-      // console.log('d : ', d);
-      // selectProvince();
-      // province.value =null;
-      // // Reset province color
-      // mapLayer.selectAll('path')
-      //   .style('fill', (d) => {
-      //     return centered && d===centered ? '#D5708B' : fillFn(d);
-      //   });
-    }
-
-    // Get province name length
-    function nameLength(d){
-      const n = nameFn(d);
-      return n ? n.length : 0;
-    }
-
-    // Get province name
-    function nameFn(d){
-      return d && d.properties ? d.properties.name : null;
-    }
-
-    // Get province color
-    function fillFn(d){
-      return color(nameLength(d));
-    }
-
-    
-    return {
-      province,
-      currentProvince,
-      myImg,
-      image,
-      imageUrl,
-      updateFile,
-      handleImages,
-      uploadImage,
-      rawImg
-    }
-  }
-
 }
 </script>
+
 <style lang="scss">
 .map-wrapper {
   .province-title {
@@ -359,6 +369,7 @@ export default {
   .province-info {
     background: white;
     position: absolute;
+    border-radius: 7px;
     top: 150px;
     right: 20px;
     height: 400px;
@@ -374,6 +385,10 @@ export default {
     // fill : url('#imgpattern');
     stroke: #021019;
     stroke-width: 1px;
+  }
+  .my-card {
+    width: 100%;
+    max-width: 290px;
   }
 }
 </style>

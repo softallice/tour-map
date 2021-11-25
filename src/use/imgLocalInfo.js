@@ -65,10 +65,13 @@ const getSvgPattern = ( ( features , svg , imgArry ) => {
 
         let imageUrl = imgArry.filter(image => image.info.properties.SIG_ENG_NM === sigEngNm)[0]
 
+        // console.log('imageUrl', imageUrl.image);
+        
+
         if(typeof imageUrl == "undefined" || imageUrl == null || imageUrl == "") {
             imageUrl = ""; ///sample.jpg
         } else {
-            imageUrl = "http://172.27.42.125:3030/blobs/" + imageUrl.url;
+            imageUrl =  imageUrl.image;
         }
 
         svg.append('pattern')
@@ -80,7 +83,6 @@ const getSvgPattern = ( ( features , svg , imgArry ) => {
             .append("image")
             .attr('id', 'img' + sigEngNm.replace(', ', '-'))
             .attr("xlink:href", imageUrl)
-            // .attr("xlink:href", "/sample.jpg")
             .attr("preserveAspectRatio", "xMidYMid slice")
             .attr("width", "100")
             .attr("height", "100") ;
@@ -166,30 +168,18 @@ const getDbImage = ( async () => {
 
 
 // 로컬 indexedDB에 저장
-const setImage = ( async ( name , image ) => {
-    let id = uuidv4();
-    console.log(' set image', name);
+const setImage = ( async ( file , image, info ) => {
+    
     let data = {
-        id : id,
-        name : name,
+        id : file.name,
         image : image,
+        info : info
     };
     
-    db.collection('images').add(data) ;
+    await db.collection('images').add(data) ;
 
-    // TODO : 나중에 
-    // let checkImage = await getImage(name);
-
-    
-    // if (checkImage.name === name ) {
-    //     console.log('중복 저장 제거')
-    //     return ;
-    // }
-    // else {
-    //     db.collection('images').add(data) ;
-    // }
-    
 })
+
 
 // 로컬 이미지 가져오기
 const getImage = ( async ( name ) => {
