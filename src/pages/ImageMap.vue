@@ -1,7 +1,7 @@
 <template>
   <div class="map-wrapper">
     <h2 v-if="province" class="province-title">{{province.state}}</h2>
-    <div v-if="currentProvince" class="province-info">
+    <div v-if="currentProvince" class="province-info" >
       <h3 class="text-center">{{currentProvince.state}}</h3>
       <ul>
         <li>지역: {{currentProvince.SIG_KOR_NM}}</li>
@@ -13,7 +13,6 @@
   <div>
     <UploadImages refs="uploadImage" @changed="handleImages" :max='10' />
   </div>
-   <!-- <q-btn color="white" text-color="black" label="Standard"  @click="#"/> -->
 </template>
 
 <script>
@@ -38,6 +37,8 @@ export default {
         const uploadImage = ref(null);
         const image = ref(null);
         const imageUrl = ref('');
+
+        let labels;
 
         let bgImg = [];
 
@@ -181,7 +182,8 @@ export default {
                 color.domain([0, d3.max(features, nameLength)]);
 
                 // Draw each province as a path
-                mapLayer.selectAll('path')
+                mapLayer
+                    .selectAll('path')
                     .data(features)
                     .enter()
                     .append('path') 
@@ -192,6 +194,24 @@ export default {
                     .on('mouseover', mouseover)
                     .on('mouseout', mouseout)
                     .on('click', clicked);
+
+                // labels = mapLayer
+                //     .selectAll('text')
+                //     .data(features)
+                //     .enter()
+                //     .append('text')
+                //     .attr('class', 'text')
+                //     .attr('transform', translateTolabel)
+                //     .attr('id', function(d) {
+                //         return 'label-' + d.properties.SIG_ENG_NM;
+                //     })
+                //     .attr('text-anchor', 'middle')
+                //     // .attr('dy', '.15em')
+                //     .attr('font-size', '10px')
+                //     .attr('font-size-adjust', '0.58')
+                //     .text(function(d) {
+                //         return d.properties.SIG_KOR_NM;
+                //     });
 
             });
         });
@@ -218,7 +238,8 @@ export default {
             // Highlight the clicked province
             mapLayer.selectAll('path')
                 .style('fill', function(d){
-                return centered && d===centered ? '#D5708B' : fillFn(d);
+                return centered && d===centered ? fillFn(d) : fillFn(d);
+                // return centered && d===centered ? '#D5708B' : fillFn(d);
             });
 
             // Zoom
@@ -292,6 +313,25 @@ export default {
             return fillId;
         }
 
+        // 텍스트 위치 조절 - 하드코딩으로 위치 조절을 했습니다.
+        const translateTolabel = ((d) => {
+            var arr = path.centroid(d);
+            if (d.properties.code == 31) {
+                //서울 경기도 이름 겹쳐서 경기도 내리기
+                arr[1] +=
+                    d3.event && d3.event.transform
+                        ? d3.event.transform / height + 20
+                        : initialScale / height + 20;
+            } else if (d.properties.code == 34) {
+                //충남은 조금 더 내리기
+                arr[1] +=
+                    d3.event && d3.event.transform
+                        ? d3.event.transform / height + 10
+                        : initialScale / height + 10;
+            }
+            return 'translate(' + arr + ')';
+        })
+
         
         return {
             province,
@@ -300,7 +340,7 @@ export default {
             imageUrl,
             handleImages,
             uploadImage,
-            rawImg
+            rawImg,
         }
     }
 }
@@ -315,8 +355,9 @@ export default {
     color: white;
   }
   .province-info {
-    background: white;
+    background: #FACCCA;
     position: absolute;
+    border-radius: 7px;
     top: 150px;
     right: 20px;
     height: 400px;
