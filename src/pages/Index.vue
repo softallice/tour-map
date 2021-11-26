@@ -38,23 +38,25 @@
         <UploadImages refs="uploadImage" @changed="handleImages" :max='10' />
         <!-- 시군구 선택 -->
         <q-dialog v-model="gpsCard">
-        <q-card style="width:250px">
+        <q-card style="width:360px">
             <q-img src="https://cdn.quasar.dev/img/parallax2.jpg" />
 
             <q-card-section>
                 <div class="q-gutter-sm">
-                    <q-option-group
-                        :options="selectedGpsoption"
-                        type="radio"
-                        v-model="selectedGps"
-                    />
+                    <q-scroll-area style="height: 250px; max-width: 360px;">
+                        <q-option-group
+                            :options="selectedGpsoption"
+                            type="radio"
+                            v-model="selectedGps"
+                        />
+                    </q-scroll-area>
                 </div>
             </q-card-section>
 
             <q-separator />
 
-            <q-card-actions align="right">
-            <q-btn v-close-popup flat color="primary" label="선택" @click="saveImageGps"/>
+            <q-card-actions >
+                <q-btn v-close-popup flat color="primary" class="full-width" label="선택" @click="saveImageGps"/>
             </q-card-actions>
         </q-card>
         </q-dialog>
@@ -72,7 +74,7 @@
             <q-separator />
 
             <q-card-actions align="right">
-            <q-btn v-close-popup flat color="primary" label="선택" @click="saveImageGps"/>
+                <q-btn v-close-popup flat color="primary" label="선택" @click="saveImageGps"/>
             </q-card-actions>
         </q-card>
         </q-dialog>
