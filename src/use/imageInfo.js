@@ -167,11 +167,10 @@ const getDbImage = ( async () => {
 
 // 로컬 indexedDB에 저장
 const setImage = ( async ( name , image ) => {
-    let id = uuidv4();
+    // let id = uuidv4();
     console.log(' set image', name);
     let data = {
-        id : id,
-        name : name,
+        id : name,
         image : image,
     };
     
@@ -190,6 +189,8 @@ const setImage = ( async ( name , image ) => {
     // }
     
 })
+
+
 
 // 로컬 이미지 가져오기
 const getImage = ( async ( name ) => {

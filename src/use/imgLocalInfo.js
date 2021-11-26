@@ -3,6 +3,7 @@ import pointInPolygon  from 'point-in-polygon';
 import Localbase from 'localbase'
 import { v4 as uuidv4 } from 'uuid';
 import koreaMap from 'src/use/korea-sgg.json'
+import koreaMapCenter from 'src/use/korea-sgg-center.json'
 
 import axios from 'axios';
 import FormData from 'form-data';
@@ -16,9 +17,15 @@ const getImageGps = ( async ( imageUrl ) => {
     
     const tags = await ExifReader.load(imageUrl);
 
-    const latitute = tags['GPSLatitude'].description;
-    const longitude = tags['GPSLongitude'].description;
-
+    let latitute = 0.000000 ;//37.4046341;
+    let longitude = 0.000000 ;//127.8842384;
+    
+    if (tags.GPSLatitude != 'undefined' && tags.GPSLatitude != null) {
+        
+        latitute = tags['GPSLatitude'].description;
+        longitude = tags['GPSLongitude'].description;
+    }
+    
     const gpsLocation = {
         'latitute' : latitute,
         'longitude' : longitude
@@ -51,11 +58,48 @@ const getImageLoc = (( lat, lon )=>{
         var lat1 = 37.45392 ; //37.4944698 ; 7.43861
         var lon1 = 126.38244 ;
         if (pointInPolygon([ lon , lat ], polygon)) {
-            // console.log(features[i].properties.SIG_ENG_NM)
           return geoFeatures[i];
         }
     }
 });
+
+// gps 없을 경우 선택 옵션
+const selectGpsOption = (() => {
+    let geoFeatures = koreaMap.features;
+    let sggArry = [];
+
+    geoFeatures.map( (sgg) => sggArry.push({
+            label : sgg.properties.SIG_KOR_NM,
+            value : sgg.properties.SIG_CD,
+        }));
+
+    return sggArry;
+})
+
+// 시군구 코드로 해당 feature 가져오기
+const getSggFeature = (( sggCd ) => {
+    let geoFeatures = koreaMap.features;
+    let geoFeaturesCenter = koreaMapCenter;
+
+    let sggFeature = geoFeatures.filter(feature => feature.properties.SIG_CD === sggCd)[0]
+    let sggFeatureCenter = geoFeaturesCenter.filter(feature => feature.SIG_CD === sggCd)[0]
+
+    if ( typeof sggFeatureCenter === "undefined") {
+        sggFeatureCenter = 
+        {
+            X : 126.38244,
+            Y : 37.45392
+        }
+    }
+    console.log('sggFeatureCenter', sggFeatureCenter);
+
+    sggFeature.center = {
+        latitute : sggFeatureCenter.X,
+        longitude : sggFeatureCenter.Y,
+    }
+
+    return sggFeature;
+})
 
 // svg 이미지 패턴- 패턴에 이미지 넣기
 const getSvgPattern = ( ( features , svg , imgArry ) => {
@@ -64,9 +108,6 @@ const getSvgPattern = ( ( features , svg , imgArry ) => {
         let sigEngNm = features[i].properties.SIG_ENG_NM;
 
         let imageUrl = imgArry.filter(image => image.info.properties.SIG_ENG_NM === sigEngNm)[0]
-
-        // console.log('imageUrl', imageUrl.image);
-        
 
         if(typeof imageUrl == "undefined" || imageUrl == null || imageUrl == "") {
             imageUrl = ""; ///sample.jpg
@@ -82,10 +123,10 @@ const getSvgPattern = ( ( features , svg , imgArry ) => {
             .attr('height', '1')
             .append("image")
             .attr('id', 'img' + sigEngNm.replace(', ', '-'))
-            .attr("xlink:href", imageUrl)
             .attr("preserveAspectRatio", "xMidYMid slice")
-            .attr("width", "100")
-            .attr("height", "100") ;
+            .attr("xlink:href", imageUrl)
+            .attr("width", "200")
+            .attr("height", "200") ;
     }
 
     return svg;
@@ -124,8 +165,6 @@ const setDbImage = ( async ( file , image, info ) => {
 // 이미지 URL 정보 저장
 const setDbImageUrl = ( async (name, url , info) => {
 
-    console.log('info', info)
-    
     let data = {
         name : name,
         url : url,
@@ -208,7 +247,9 @@ const imageInfo = {
     getImage,
     getImageAll,
     setDbImage,
-    getDbImage
+    getDbImage,
+    selectGpsOption,
+    getSggFeature
 };
 
 export default imageInfo;

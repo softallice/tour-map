@@ -2,24 +2,71 @@
   <div class="map-wrapper">
     <h2 v-if="province" class="province-title">{{province.state}}</h2>
     <div v-if="currentProvince" class="province-info" >
-      <h3 class="text-center">{{currentProvince.state}}</h3>
-      <ul>
-        <li>지역: {{currentProvince.SIG_KOR_NM}}</li>
-        <li>영문: {{currentProvince.SIG_ENG_NM}}</li>
-        <!-- <li>영문: {{currentProvince.url}}</li> -->
-      </ul>
         <q-card class="my-card" flat>
+            <q-item>
+                <q-item-section avatar>
+                <q-avatar>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Flag_of_South_Korea.svg/255px-Flag_of_South_Korea.svg.png">
+                </q-avatar>
+                </q-item-section>
+
+                <q-item-section>
+                <q-item-label>{{currentProvince.SIG_KOR_NM}}</q-item-label>
+                <q-item-label caption>{{currentProvince.SIG_ENG_NM}}</q-item-label>
+                </q-item-section>
+            </q-item>
+
             <q-img :src="currentProvince.url">
                 <!-- <div class="absolute-bottom text-h6">
                 Title
                 </div> -->
             </q-img>
-        </q-card>
+        </q-card>   
     </div>
     <svg></svg>
   </div>
   <div>
     <UploadImages refs="uploadImage" @changed="handleImages" :max='10' />
+    <!-- 시군구 선택 -->
+    <q-dialog v-model="gpsCard">
+      <q-card style="width:250px">
+        <q-img src="https://cdn.quasar.dev/img/parallax2.jpg" />
+
+        <q-card-section>
+            <div class="q-gutter-sm">
+                <q-option-group
+                    :options="selectedGpsoption"
+                    type="radio"
+                    v-model="selectedGps"
+                />
+            </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right">
+          <q-btn v-close-popup flat color="primary" label="선택" @click="saveImageGps"/>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    <!-- 지도에서 선택 후 파일 올리기 -->
+    <q-dialog v-model="selectedMap">
+      <q-card style="width:250px">
+        <q-img src="https://cdn.quasar.dev/img/parallax2.jpg" />
+
+        <q-card-section>
+            <div v-if="currentProvince" class="q-gutter-sm">
+                {{currentProvince.SIG_KOR_NM}}
+            </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right">
+          <q-btn v-close-popup flat color="primary" label="선택" @click="saveImageGps"/>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -27,6 +74,7 @@
 import { ref, onMounted } from 'vue';
 import * as d3 from 'd3';
 import koreaMap from 'src/use/korea-sgg.json'
+import koreaMapCenter from 'src/use/korea-sgg-center.json'
 import imageInfo from 'src/use/imgLocalInfo';
 // drag and drop 이미지 업로드
 import UploadImages from 'src/components/UploadDropImages.vue';
@@ -48,7 +96,7 @@ export default {
             return _size;
         })
         const screenHeightSize = (() => {
-            let _size = $q.screen.height - 100;
+            let _size = $q.screen.height - 70;
 
             return _size;
         })
@@ -67,6 +115,13 @@ export default {
 
         let rawImg = ref(null);
 
+        let selectedGps = ref(null);
+        let selectedGpsoption = imageInfo.selectGpsOption();
+        let gpsCard = ref(false);
+        let imageFile = null;
+
+        let selectedMap = ref(false);
+
         // map 초기값
         let centered = null;
         let mapCenter = {
@@ -81,24 +136,35 @@ export default {
         let initialScale = 6500;
 
         let color = d3.scale.linear()
-        .domain([1, 20])
-        .clamp(true)
-        .range(['#08304b', '#08304b']);
+            .domain([1, 20])
+            .clamp(true)
+            .range(['#08304b', '#08304b']);
     
-        let projection = d3.geo.equirectangular()
-        .scale(initialScale)
-        .center([mapCenter.lng, mapCenter.lat])
-        .translate([size.width / 2, size.height / 2]);
+        let projection = d3.geo.mercator()
+            .scale(initialScale)
+            .center([mapCenter.lng, mapCenter.lat])
+            .translate([size.width / 2, size.height / 2]);
+        // let projection = d3.geo.equirectangular()
+        //     .scale(initialScale)
+        //     .center([mapCenter.lng, mapCenter.lat])
+        //     .translate([size.width / 2, size.height / 2]);
 
         let path = d3.geo.path()
-        .projection(projection);
+            .projection(projection);
+        
+        let zoom = d3.behavior
+            .zoom()
+            .translate(projection.translate())
+            .scale(projection.scale())
+            .scaleExtent([size.height, 800 * size.height])
+            .on('zoom', mapZoom)
+            ;
 
         // map svg 
         let svg;
         let g;
         let effectLayer;
         let mapLayer;
-
         
 
         const handleImages = ((files) => {
@@ -107,31 +173,56 @@ export default {
             console.log(arrFile)
 
             arrFile.map(async ( arr ) => {
-                createBase64Image(arr);
+                checkImageGps(arr);
             })
         })
 
-        const createBase64Image = (async (fileObject) => {
-            // 이미지 GPS 정보 확인
-            
+        // 이미지 좌료 유무에 따라 분기
+        const checkImageGps =  (async (fileObject) => {
             let imgGps = await imageInfo.getImageGps(fileObject);
-
-            console.log('imgGps ', imgGps);
-            // GPS 정보로 사진 위치 확인
             let loc = imageInfo.getImageLoc(imgGps.latitute, imgGps.longitude);
 
+            let info;
 
+            if (imgGps.latitute != 0 && typeof loc != 'undefined' ){
+                // selectGps();
+                info = {
+                    latitute : imgGps.latitute,
+                    longitude : imgGps.longitude,
+                    properties : loc.properties
+                };
+                
+                loc.image = fileObject;
+    
+                bgImg.push(loc);  
+    
+                createBase64Image(fileObject, info);
+            } else {
+                noneGps( fileObject );
+                
+            }
+
+        })
+
+        // 이미지 좌표 지정해서 저장
+        const saveImageGps = (() => {
+            let sggFeature = currentProvince.value ? imageInfo.getSggFeature(currentProvince.value.SIG_CD) : imageInfo.getSggFeature(selectedGps.value);
             let info = {
-                latitute : imgGps.latitute,
-                longitude : imgGps.longitude,
-                properties : loc.properties
+                latitute : sggFeature.latitute,
+                longitude : sggFeature.longitude,
+                properties : sggFeature.properties
             };
             
-            loc.image = fileObject;
-            
+            sggFeature.image = imageFile;
 
+            bgImg.push(sggFeature);  
 
-            
+            createBase64Image(imageFile, info);
+
+            imageFile = null;
+        })
+
+        const createBase64Image = (async (fileObject, info) => {
             // 이미지 base64
             let reader = new FileReader();
             reader.onload = async (e) => {
@@ -139,13 +230,23 @@ export default {
                 // imageInfo.setImage(fileObject.name, rawImg.value);
                 // 서버에 이미지 저장
                  await imageInfo.setImage(fileObject, rawImg.value, info);
-                // loc.url = remoteUrl.id;
-                bgImg.push(loc)                
+                // loc.url = remoteUrl.id;                              
             };
-
             reader.readAsDataURL(fileObject);
             // reader.readAsBinaryString(fileObject);
         })
+
+        // GPS 없는 이미지에 GPS 맵핑
+        const noneGps = (( fileObject ) => {
+            if ( currentProvince.value ) {
+                selectedMap.value = true
+            } else {
+                
+                gpsCard.value = true;
+            }
+            
+            imageFile = fileObject;
+        })        
 
         const selectProvince = (( province ) => {
             province.value = province;
@@ -177,10 +278,10 @@ export default {
             svg.append('defs');
 
             let imageArray = await imageInfo.getImageAll();
-            console.log('imageArray', imageArray)
-      
+            
             svg = imageInfo.getSvgPattern(koreaMap.features, svg, imageArray);
 
+            svg.call(zoom);
       
             // Add background
             svg.append('rect')
@@ -344,6 +445,15 @@ export default {
             return 'translate(' + arr + ')';
         })
 
+        // const mapZoom = (() => {
+        //     projection.translate(d3.event.translate).scale(d3.event.scale);
+        // })
+        function mapZoom () {
+            console.log('zoom');
+            projection.translate(d3.event.translate).scale(d3.event.scale);
+            mapLayer.selectAll('path').attr('d', path);
+        }
+
         
         return {
             province,
@@ -353,6 +463,11 @@ export default {
             handleImages,
             uploadImage,
             rawImg,
+            gpsCard,
+            selectedGps,
+            selectedGpsoption,
+            saveImageGps,
+            selectedMap
         }
     }
 }
@@ -388,6 +503,11 @@ export default {
   }
   .my-card {
     width: 100%;
+    max-width: 290px;
+  }
+  .gps-card {
+    width: 100%;
+    min-width: 250px;
     max-width: 290px;
   }
 }

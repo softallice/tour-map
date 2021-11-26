@@ -120,7 +120,7 @@
       </svg>
 
       <p class="mainMessage">
-        {{ uploadMsg ? uploadMsg : "여기에 이미지를 올려 주세요" }}
+        {{ uploadMsg ? uploadMsg : "여기에 이미지를 올려 주세요. GPS 정보가 없으면 한의 이미지만 올라갑니다." }}
       </p>
     </div>
     <div class="imgsPreview" v-show="Imgs.length > 0">
@@ -326,7 +326,7 @@ export default {
   cursor: pointer;
 }
 .beforeUpload .icon {
-  width: 150px;
+  width: 100px;
   margin: auto;
   display: block;
 }
