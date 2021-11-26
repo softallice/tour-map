@@ -9,6 +9,9 @@
                 </q-avatar>
                     이미지 여행 지도
                 </q-toolbar-title>
+                <q-btn icon="fa fa-download" class="float-right" @click="SaveImage" flat dense>
+                  <q-tooltip>Download PNG</q-tooltip>
+                </q-btn>
             </q-toolbar>
         </q-header>
         <div v-if="currentProvince" class="province-info" >
@@ -79,11 +82,13 @@
         </q-card>
         </q-dialog>
     </div>
+    <!-- <div><canvas id="canvas"></canvas></div> -->
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
 import * as d3 from 'd3';
+import Canvg, { presets } from 'canvg';
 import koreaMap from 'src/use/korea-sgg.json'
 import koreaMapCenter from 'src/use/korea-sgg-center.json'
 import imageInfo from 'src/use/imgLocalInfo';
@@ -293,6 +298,7 @@ export default {
         const rendor = ( async () => {
 
             svg = d3.select('svg')
+                .attr('id', 'mapSvg')
                 .attr('width', size.width)
                 .attr('height', size.height);
 
@@ -469,6 +475,36 @@ export default {
         // const mapZoom = (() => {
         //     projection.translate(d3.event.translate).scale(d3.event.scale);
         // })
+        const SaveImage = ( async () => {
+            // const el = document.getElementById("mapSvg"); //this is our inline SVG
+            // var canvas = document.createElement('canvas'); //create a canvas for the SVG render
+            
+            // canvas.width = el.clientWidth; //set canvas sizes
+            // canvas.height = el.clientHeight;
+
+            // const convertSvg = new XMLSerializer().serializeToString(el); //convert SVG to string
+            // //render SVG inside canvas
+            // const ctx = canvas.getContext('2d');
+            // // const v = await Canvg.fromString(ctx, convertSvg);
+            // const v = await Canvg.fromString(ctx, convertSvg);
+            // await v.render();
+            
+            // // const blob = await canvas.toBlob();
+            // let canvasBlob = await new Promise(resolve => canvas.toBlob(resolve));
+            // // canvas
+            // console.log("canvasBlob", canvasBlob);
+            
+            // const linkSource = canvas.toDataURL();
+            // const downloadLink = document.createElement('a');
+            // document.body.appendChild(downloadLink);
+            // downloadLink.href = linkSource;
+            // downloadLink.target = '_self';
+            // downloadLink.download = 'map.png';
+            // downloadLink.click();
+        })
+
+        
+
         function mapZoom () {
             console.log('zoom');
             projection.translate(d3.event.translate).scale(d3.event.scale);
@@ -488,7 +524,8 @@ export default {
             selectedGps,
             selectedGpsoption,
             saveImageGps,
-            selectedMap
+            selectedMap,
+            SaveImage
         }
     }
 }

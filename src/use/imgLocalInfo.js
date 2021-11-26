@@ -17,8 +17,8 @@ const getImageGps = ( async ( imageUrl ) => {
     
     const tags = await ExifReader.load(imageUrl);
 
-    let latitute = 0.000000 ;//37.4046341;
-    let longitude = 0.000000 ;//127.8842384;
+    let latitute = 0 ;//37.4046341;
+    let longitude = 0 ;//127.8842384;
     
     if (tags.GPSLatitude != 'undefined' && tags.GPSLatitude != null) {
         
@@ -30,6 +30,8 @@ const getImageGps = ( async ( imageUrl ) => {
         'latitute' : latitute,
         'longitude' : longitude
     };
+
+    alert(gpsLocation.latitute);
 
     return gpsLocation;
 });

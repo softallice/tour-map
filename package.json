@@ -12,6 +12,7 @@
   "dependencies": {
     "@quasar/extras": "^1.0.0",
     "axios": "^0.24.0",
+    "canvg": "^3.0.9",
     "core-js": "^3.6.5",
     "d3": "3.5.17",
     "exif-js": "^2.3.0",
