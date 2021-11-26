@@ -31,7 +31,7 @@ const getImageGps = ( async ( imageUrl ) => {
         'longitude' : longitude
     };
 
-    alert(JSON.stringify(gpsLocation));
+    // alert(JSON.stringify(gpsLocation));
 
     return gpsLocation;
 });
