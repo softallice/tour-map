@@ -22,8 +22,8 @@ const getImageGps = ( async ( imageUrl ) => {
     
     if (tags.GPSLatitude != 'undefined' && tags.GPSLatitude != null) {
         
-        latitute = tags['GPSLatitude'].description;
-        longitude = tags['GPSLongitude'].description;
+        latitute = tags.GPSLatitude.description ; //tags['GPSLatitude'].description;
+        longitude = tags.GPSLongitude.description //tags['GPSLongitude'].description;
     }
     
     const gpsLocation = {
@@ -31,7 +31,7 @@ const getImageGps = ( async ( imageUrl ) => {
         'longitude' : longitude
     };
 
-    alert(gpsLocation.latitute);
+    alert(JSON.stringify(gpsLocation));
 
     return gpsLocation;
 });
