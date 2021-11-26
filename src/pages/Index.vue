@@ -1,73 +1,82 @@
 <template>
-  <div class="map-wrapper">
-    <h2 v-if="province" class="province-title">{{province.state}}</h2>
-    <div v-if="currentProvince" class="province-info" >
-        <q-card class="my-card" flat>
-            <q-item>
-                <q-item-section avatar>
+    <div class="map-wrapper">
+        <!-- <h2 v-if="province" class="province-title">{{province.state}}</h2> -->
+        <q-header bordered class="bg-white text-primary">
+            <q-toolbar>
+                <q-toolbar-title class="text-center">
                 <q-avatar>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Flag_of_South_Korea.svg/255px-Flag_of_South_Korea.svg.png">
+                    <img src="~assets/logo-map-icon.svg">
                 </q-avatar>
-                </q-item-section>
+                    이미지 여행 지도
+                </q-toolbar-title>
+            </q-toolbar>
+        </q-header>
+        <div v-if="currentProvince" class="province-info" >
+            <q-card class="my-card" flat @click="currentProvince = null">
+                <q-item>
+                    <q-item-section avatar>
+                    <q-avatar square >
+                        <img src="https://cdn.pixabay.com/photo/2016/05/30/15/33/julia-roberts-1424985_960_720.png">
+                    </q-avatar>
+                    </q-item-section>
 
-                <q-item-section>
-                <q-item-label>{{currentProvince.SIG_KOR_NM}}</q-item-label>
-                <q-item-label caption>{{currentProvince.SIG_ENG_NM}}</q-item-label>
-                </q-item-section>
-            </q-item>
-
-            <q-img :src="currentProvince.url">
-                <!-- <div class="absolute-bottom text-h6">
-                Title
-                </div> -->
-            </q-img>
-        </q-card>   
+                    <q-item-section>
+                    <q-item-label>{{currentProvince.SIG_KOR_NM}}</q-item-label>
+                    <q-item-label caption>{{currentProvince.SIG_ENG_NM}}</q-item-label>
+                    </q-item-section>
+                </q-item>
+                <q-img v-if="currentProvince.url" :src="currentProvince.url">
+                    <!-- <div class="absolute-bottom text-h6">
+                    Title
+                    </div> -->
+                </q-img>
+            </q-card>   
+        </div>
+        <svg></svg>
     </div>
-    <svg></svg>
-  </div>
-  <div>
-    <UploadImages refs="uploadImage" @changed="handleImages" :max='10' />
-    <!-- 시군구 선택 -->
-    <q-dialog v-model="gpsCard">
-      <q-card style="width:250px">
-        <q-img src="https://cdn.quasar.dev/img/parallax2.jpg" />
+    <div>
+        <UploadImages refs="uploadImage" @changed="handleImages" :max='10' />
+        <!-- 시군구 선택 -->
+        <q-dialog v-model="gpsCard">
+        <q-card style="width:250px">
+            <q-img src="https://cdn.quasar.dev/img/parallax2.jpg" />
 
-        <q-card-section>
-            <div class="q-gutter-sm">
-                <q-option-group
-                    :options="selectedGpsoption"
-                    type="radio"
-                    v-model="selectedGps"
-                />
-            </div>
-        </q-card-section>
+            <q-card-section>
+                <div class="q-gutter-sm">
+                    <q-option-group
+                        :options="selectedGpsoption"
+                        type="radio"
+                        v-model="selectedGps"
+                    />
+                </div>
+            </q-card-section>
 
-        <q-separator />
+            <q-separator />
 
-        <q-card-actions align="right">
-          <q-btn v-close-popup flat color="primary" label="선택" @click="saveImageGps"/>
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-    <!-- 지도에서 선택 후 파일 올리기 -->
-    <q-dialog v-model="selectedMap">
-      <q-card style="width:250px">
-        <q-img src="https://cdn.quasar.dev/img/parallax2.jpg" />
+            <q-card-actions align="right">
+            <q-btn v-close-popup flat color="primary" label="선택" @click="saveImageGps"/>
+            </q-card-actions>
+        </q-card>
+        </q-dialog>
+        <!-- 지도에서 선택 후 파일 올리기 -->
+        <q-dialog v-model="selectedMap">
+        <q-card style="width:250px">
+            <q-img src="https://cdn.quasar.dev/img/parallax2.jpg" />
 
-        <q-card-section>
-            <div v-if="currentProvince" class="q-gutter-sm">
-                {{currentProvince.SIG_KOR_NM}}
-            </div>
-        </q-card-section>
+            <q-card-section>
+                <div v-if="currentProvince" class="q-gutter-sm">
+                    {{currentProvince.SIG_KOR_NM}}
+                </div>
+            </q-card-section>
 
-        <q-separator />
+            <q-separator />
 
-        <q-card-actions align="right">
-          <q-btn v-close-popup flat color="primary" label="선택" @click="saveImageGps"/>
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-  </div>
+            <q-card-actions align="right">
+            <q-btn v-close-popup flat color="primary" label="선택" @click="saveImageGps"/>
+            </q-card-actions>
+        </q-card>
+        </q-dialog>
+    </div>
 </template>
 
 <script>
@@ -96,7 +105,7 @@ export default {
             return _size;
         })
         const screenHeightSize = (() => {
-            let _size = $q.screen.height - 70;
+            let _size = $q.screen.height;
 
             return _size;
         })
@@ -152,13 +161,13 @@ export default {
         let path = d3.geo.path()
             .projection(projection);
         
-        let zoom = d3.behavior
-            .zoom()
-            .translate(projection.translate())
-            .scale(projection.scale())
-            .scaleExtent([size.height, 800 * size.height])
-            .on('zoom', mapZoom)
-            ;
+        // let zoom = d3.behavior
+        //     .zoom()
+        //     .translate(projection.translate())
+        //     .scale(projection.scale())
+        //     .scaleExtent([size.height, 800 * size.height])
+        //     .on('zoom', mapZoom)
+        //     ;
 
         // map svg 
         let svg;
@@ -197,6 +206,8 @@ export default {
                 bgImg.push(loc);  
     
                 createBase64Image(fileObject, info);
+
+                update();
             } else {
                 noneGps( fileObject );
                 
@@ -218,6 +229,8 @@ export default {
             bgImg.push(sggFeature);  
 
             createBase64Image(imageFile, info);
+
+            update();
 
             imageFile = null;
         })
@@ -269,8 +282,14 @@ export default {
             rendor();
         })
 
+        const update = (() => {
+            // svg.selectAll("pattern").remove();
+            // svg = imageInfo.getSvgPattern(koreaMap.features, svg, imageArray);            
+            // reader();
+        })
+
         const rendor = ( async () => {
-      
+
             svg = d3.select('svg')
                 .attr('width', size.width)
                 .attr('height', size.height);
@@ -281,7 +300,7 @@ export default {
             
             svg = imageInfo.getSvgPattern(koreaMap.features, svg, imageArray);
 
-            svg.call(zoom);
+            // svg.call(zoom);
       
             // Add background
             svg.append('rect')
@@ -487,7 +506,7 @@ export default {
     border-radius: 7px;
     top: 150px;
     right: 20px;
-    height: 400px;
+    // height: 400px;
     width: 300px;
   }
   .background {

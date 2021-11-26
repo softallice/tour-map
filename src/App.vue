@@ -8,3 +8,7 @@ export default defineComponent({
   name: 'App'
 })
 </script>
+<style>
+/* 폰트 적용 */
+body{ font-family: 'Noto Sans KR', 'sans-serif'; }
+</style>
