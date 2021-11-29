@@ -38,7 +38,26 @@
         <svg></svg>
     </div>
     <div>
-        <UploadImages refs="uploadImage" @changed="handleImages" :max='10' />
+        <div v-if ="mobile">
+            <q-file
+                v-model="mobileImage"
+                label="사진을 선택해 주세요"
+                filled
+                accept=".jpg, image/*"
+                @input="handleImagesMobile"
+            >
+                <template v-slot:prepend>
+                    <q-icon name="cloud_upload" @click.stop />
+                </template>
+                <template v-slot:append>
+                    <q-icon name="close" @click.stop="mobileImage = null" class="cursor-pointer" />
+                </template>
+            </q-file>
+
+        </div>
+        <div v-else>
+            <UploadImages refs="uploadImage" @changed="handleImages" :max='10' />
+        </div>
         <!-- 시군구 선택 -->
         <q-dialog v-model="gpsCard">
         <q-card style="width:360px">
@@ -106,6 +125,8 @@ export default {
     setup () {
         const $q = useQuasar();
 
+        const mobile = ref($q.platform.is.mobile);
+
         const screenWidthSize = (() => {
             let _size = $q.screen.width;
 
@@ -126,6 +147,8 @@ export default {
         const imageUrl = ref('');
 
         let labels;
+
+        let mobileImage = ref(null);
 
         let bgImg = [];
 
@@ -182,11 +205,20 @@ export default {
         let effectLayer;
         let mapLayer;
         
-
+        // 데스크탑 환경에서
         const handleImages = ((files) => {
             let arrFile = [...files];
 
-            console.log(arrFile)
+            arrFile.map(async ( arr ) => {
+                checkImageGps(arr);
+            })
+        })
+
+        // 모바일 환경에서
+        const handleImagesMobile = ( async (files) => {
+            let file = files.currentTarget.files[0];
+
+            let arrFile = [file];
 
             arrFile.map(async ( arr ) => {
                 checkImageGps(arr);
@@ -195,6 +227,7 @@ export default {
 
         // 이미지 좌료 유무에 따라 분기
         const checkImageGps =  (async (fileObject) => {
+
             let imgGps = await imageInfo.getImageGps(fileObject);
             let loc = imageInfo.getImageLoc(imgGps.latitute, imgGps.longitude);
 
@@ -240,6 +273,19 @@ export default {
             update();
 
             imageFile = null;
+        })
+
+        const readAsDataURL = (async (file) => {
+            return new Promise(function (resolve, reject) {
+                let fr = new FileReader();
+                fr.onload = function () {
+                  resolve(fr.result);
+                };
+                fr.onerror = function () {
+                    reject(fr);
+                };
+                fr.readAsDataURL(file);
+            });
         })
 
         const createBase64Image = (async (fileObject, info) => {
@@ -518,6 +564,7 @@ export default {
             image,
             imageUrl,
             handleImages,
+            handleImagesMobile,
             uploadImage,
             rawImg,
             gpsCard,
@@ -525,7 +572,9 @@ export default {
             selectedGpsoption,
             saveImageGps,
             selectedMap,
-            SaveImage
+            SaveImage,
+            mobile,
+            mobileImage
         }
     }
 }
